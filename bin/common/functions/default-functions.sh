@@ -21,7 +21,7 @@ parseHelpArgument() {
   local ARGS=("$@")
   for i in "${!ARGS[@]}"; do
     case "${ARGS[i]}" in
-      -h)
+      -h|--help)
         parseHelp
         ;;
     esac
@@ -32,18 +32,22 @@ parseHelpArgument() {
 # Override this function in the scripts that source this file
 parseArguments() {
   log.trace "Using default parseArguments() function. Override re defining this function in each script when needed."
-  unset OPTIND
-  while getopts ":s" OPT; do
-    case $OPT in
-    ("s")
-      log.info "-s sample argument passed to script"
-      ;;
-    (\?)
-      parseInvalidArgument "$OPTARG"
-      ;;
+  local OPTIONS=("$@")
+  for i in "${!OPTIONS[@]}"; do
+    local CURRENT_OPTION="${OPTIONS[i]}"
+    if [ "${CURRENT_OPTION:0:1}" != "-" ]; then
+      continue
+    fi
+    local CURRENT_OPTION_ARG="${OPTIONS[i+1]}"
+    case "${CURRENT_OPTION}" in
+      -s)
+        log.info "-s sample argument passed to script"
+        ;;
+      -?|-??*)
+        parseInvalidArgument "${CURRENT_OPTION}"
+        ;;        
     esac
-  done
-  unset OPTIND
+  done    
 }
 
 # Default print help message
@@ -52,7 +56,7 @@ printHelp() {
   echo -e "Usage: ${COL_PURPLE}${SCRIPT_NAME}${COL_NORMAL} [options]"
   echo -e ""
   echo -e "  Options:"
-  addHelpOption "-h" "display help"
+  addHelpOption "-h --help" "display help"
   printHelpOptions
   printHelpFooter
 }
@@ -69,7 +73,8 @@ printHelpFooter() {
 
 # Display the invalid argument error and exit printing help message
 parseInvalidArgument() {
-  log.error "Invalid option: -$1"
+  local OPTION=$1
+  log.error "Invalid option: ${OPTION}"
   printHelp
   exitProcess ${EXIT_INVALID_ARG}
 }
