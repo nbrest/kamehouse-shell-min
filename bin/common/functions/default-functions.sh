@@ -10,6 +10,11 @@ ctrlC() {
   exitProcess ${EXIT_PROCESS_CANCELLED}
 }
 
+# Override to execute logic before parsing command line arguments
+preParseCmdArguments() {
+  return
+}
+
 # Parse command line arguments
 parseCmdArguments() {
   parseHelpArgument "$@"
@@ -31,7 +36,6 @@ parseHelpArgument() {
 # Default implementation of the function to parse command line arguments
 # Override this function in the scripts that source this file
 parseArguments() {
-  log.trace "Using default parseArguments() function. Override re defining this function in each script when needed."
   local OPTIONS=("$@")
   for i in "${!OPTIONS[@]}"; do
     local CURRENT_OPTION="${OPTIONS[i]}"
@@ -63,12 +67,12 @@ printHelp() {
 
 # Override in each script with the options specific to the script
 printHelpOptions() {
-  log.trace "Using default printHelpOptions() function. Override re defining this function in each script when needed."
+  return
 }
 
 # Override in each script to print a footer after the help options
 printHelpFooter() {
-  log.trace "Using default printHelpFooter() function. Override re defining this function in each script when needed."
+  return
 }
 
 # Display the invalid argument error and exit printing help message
@@ -87,7 +91,7 @@ parseHelp() {
 
 # Set and validate the environment variables after parsing the command line arguments
 setEnvFromArguments() {
-  log.trace "Using default setEnvFromArguments() function. Override re defining this function in each script when needed."
+  return
 }
 
 # Default main process that needs to be overriden with custom script logic.
@@ -95,10 +99,10 @@ mainProcess() {
   log.info "Override mainProcess() with the script logic."
 }
 
-# Default main function. Override this one ONLY if I don't want logging of start and finish by default.
-# For example, in scripts that return true or false like is.linux.host.sh and shouldn't output anything else.
+# Default main function wrapper. This should never be overriden
 mainWrapper() {
   logStart
+  preParseCmdArguments
   parseCmdArguments "$@"
   setEnvFromArguments
   mainProcess "$@"
@@ -107,6 +111,9 @@ mainWrapper() {
 
 # main function to call from each script
 main() {
+  setLogLevelFromEnv
+  setRootPrefix
+  setIsLinuxHost
   if ${LOG_PROCESS_TO_FILE}; then
     # default: set +o pipefail
     # set -o pipefail : if mainWrapper exits with != 0, echo $? will show the error code. With the default
