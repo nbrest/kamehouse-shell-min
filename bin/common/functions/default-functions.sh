@@ -10,8 +10,8 @@ ctrlC() {
   exitProcess ${EXIT_PROCESS_CANCELLED}
 }
 
-# Override to execute logic before parsing command line arguments
-preParseCmdArguments() {
+# Override to load the configuration files for each script
+loadConfigFiles() {
   return
 }
 
@@ -94,6 +94,16 @@ setEnvFromArguments() {
   return
 }
 
+# Set the global environment variables for the script after loading all configuration and before parsing arguments that may override them
+initScriptEnv() {
+  return
+}
+
+# Set the kamehouse shell environment parameters before configuring the shell
+initKameHouseShellEnv() {
+  return
+}
+
 # Default main process that needs to be overriden with custom script logic.
 mainProcess() {
   log.info "Override mainProcess() with the script logic."
@@ -102,18 +112,25 @@ mainProcess() {
 # Default main function wrapper. This should never be overriden
 mainWrapper() {
   logStart
-  preParseCmdArguments
+  loadConfigFiles
+  initScriptEnv
   parseCmdArguments "$@"
   setEnvFromArguments
   mainProcess "$@"
   exitSuccessfully
 }
 
-# main function to call from each script
-main() {
+# Configure the kamehouse shell environment
+configureKameHouseShell() {
   setLogLevelFromEnv
   setRootPrefix
   setIsLinuxHost
+}
+
+# main function to call from each script
+main() {
+  initKameHouseShellEnv
+  configureKameHouseShell
   if ${LOG_PROCESS_TO_FILE}; then
     # default: set +o pipefail
     # set -o pipefail : if mainWrapper exits with != 0, echo $? will show the error code. With the default
