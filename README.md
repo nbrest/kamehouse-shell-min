@@ -15,9 +15,7 @@ git clone https://github.com/nbrest/kamehouse-shell-min.git
 #!/bin/bash
 
 source ${HOME}/git/kamehouse-shell-min/bin/common/functions/common-functions.sh
-if [ "$?" != "0" ]; then
-  echo "`date +%Y-%m-%d' '%H:%M:%S` - [ERROR] - Error importing common-functions.sh" ; exit 99
-fi
+if [ "$?" != "0" ]; then echo "`date +%Y-%m-%d' '%H:%M:%S` - [ERROR] - Error importing common-functions.sh" ; exit 99 ; fi
 
 initKameHouseShellEnv() {
   #LOG=DISABLED
