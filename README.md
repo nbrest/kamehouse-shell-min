@@ -66,6 +66,6 @@ main "$@"
 
 ## Version
 
-- Using kamehouse's commit version [c78eca952](https://github.com/nbrest/kamehouse/tree/c78eca952)
+- Using kamehouse's commit version [c2ee37005](https://github.com/nbrest/kamehouse/tree/c2ee37005)
 
 - The source files are exported automatically from kamehouse with [update-kamehouse-shell-min.sh](https://github.com/nbrest/kamehouse/blob/dev/kamehouse-shell/bin/kamehouse-shell-min/update-kamehouse-shell-min.sh)
