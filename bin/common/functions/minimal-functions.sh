@@ -95,7 +95,7 @@ setIsLinuxHost() {
   local UNAME_S=`uname -s`
   local UNAME_R=`uname -r`
   if [ "${UNAME_S}" != "Linux" ]; then
-    # Using Git Bash
+    # Using Win Bash
     export IS_LINUX_HOST=false
   else
     if [[ ${UNAME_R} == *"Microsoft"* ]]; then
@@ -108,17 +108,21 @@ setIsLinuxHost() {
   fi
 }
 
-# Check if I'm using Ubuntu for windows, Git Bash or any other bash implementation.
+# Check if I'm using Ubuntu for windows, Msys2, Git Bash or any other bash implementation.
 # Default is Ubuntu for windows. Set root prefix for mounted drives based on the subsystem.
-# In Git Bash drives are mounted /c /d so root prefix is empty.
+# In Msys2 and Git Bash drives are mounted /c /d so root prefix is empty.
 # In Ubuntu for windows drives are mounted in /mnt/c /mnt/d so root prefix is /mnt
 setRootPrefix() {
   # Ubuntu for windows
   ROOT_PREFIX="/mnt"
-  local MSYSTEM_MINGW="${MSYSTEM}"
-  MSYSTEM_MINGW=`echo ${MSYSTEM_MINGW:0:5}`
+  local MSYSTEM_MINGW=`echo ${MSYSTEM:0:5}`
   if [ "${MSYSTEM_MINGW}" == "MINGW" ]; then
     # Git Bash
+    ROOT_PREFIX=""
+  fi
+  local MSYSTEM_MSYS=`echo ${MSYSTEM:0:4}`
+  if [ "${MSYSTEM_MSYS}" == "MSYS" ]; then
+    # Msys2
     ROOT_PREFIX=""
   fi
 }
