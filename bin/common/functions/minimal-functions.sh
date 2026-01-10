@@ -40,6 +40,9 @@ export IS_LINUX_HOST=false
 # absolute paths I define in the script.
 ROOT_PREFIX="/mnt"
 
+# Default kamehouse-shell installation path
+KAMEHOUSE_SHELL_PATH=${HOME}/programs/kamehouse-shell/bin
+
 # Adds a script option to the help menu
 addHelpOption() {
   local OPTION=$1
@@ -124,5 +127,25 @@ setRootPrefix() {
   if [ "${MSYSTEM_MSYS}" == "MSYS" ]; then
     # Msys2
     ROOT_PREFIX=""
+  fi
+}
+
+# Import functions external to kamehouse shell
+importFunctions() {
+  local FUNCTIONS_FILE=$1
+  source ${FUNCTIONS_FILE}
+  if [ "$?" != "0" ]; then 
+    echo "Error importing ${FUNCTIONS_FILE}"
+    exit 99 
+  fi
+}
+
+# Import kamehouse shell functions
+importKamehouse() {
+  local FUNCTIONS_FILE=$1
+  source ${KAMEHOUSE_SHELL_PATH}/${FUNCTIONS_FILE}
+  if [ "$?" != "0" ]; then 
+    echo "Error importing ${KAMEHOUSE_SHELL_PATH}/${FUNCTIONS_FILE}"
+    exit 99 
   fi
 }
