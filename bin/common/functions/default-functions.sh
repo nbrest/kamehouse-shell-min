@@ -12,7 +12,6 @@ ctrlC() {
 
 # Parse command line arguments
 parseCmdArguments() {
-  parseHelpArgument "$@"
   parseArguments "$@"
 }
 
@@ -23,6 +22,18 @@ parseHelpArgument() {
     case "${ARGS[i]}" in
       -h|--help)
         parseHelp
+        ;;
+    esac
+  done
+}
+
+# Parse show script config argument
+parseShowScriptConfigArgument() {
+  local ARGS=("$@")
+  for i in "${!ARGS[@]}"; do
+    case "${ARGS[i]}" in
+      --show-config)
+        parseShowScriptConfig
         ;;
     esac
   done
@@ -60,7 +71,7 @@ parseInvalidArgument() {
 # Print the help and exit
 parseHelp() {
   printHelp
-  exitSuccessfully
+  exit ${EXIT_SUCCESS}
 }
 
 # Default print help message
@@ -70,8 +81,25 @@ printHelp() {
   echo -e ""
   echo -e "  Options:"
   addHelpOption "-h --help" "display help"
+  addHelpOption "--show-config" "display script config file"
   printHelpOptions
   printHelpFooter
+}
+
+# Show script config and exit
+parseShowScriptConfig() {
+  showScriptConfig
+  exit ${EXIT_SUCCESS}
+}
+
+# Show script config
+showScriptConfig() {
+  if [ -f "${SCRIPT_CONFIG_FILE}" ]; then
+    log.info "Script config: ${SCRIPT_CONFIG_FILE}"
+    cat ${SCRIPT_CONFIG_FILE}
+  else
+    log.info "Script config file ${SCRIPT_CONFIG_FILE} doesn't exist"
+  fi
 }
 
 # Override in each script with the options specific to the script
@@ -81,7 +109,7 @@ printHelpOptions() {
 
 # Override in each script to print a footer after the help options
 printHelpFooter() {
-  return
+  echo ""
 }
 
 # Set and validate the environment variables after parsing the command line arguments
@@ -91,7 +119,13 @@ setEnvFromArguments() {
 
 # Override to load the configuration files for each script before parsing arguments
 loadConfigFiles() {
-  return
+  loadScriptConfigFile
+}
+
+# Load script config file
+loadScriptConfigFile() {
+  touch ${SCRIPT_CONFIG_FILE}
+  source ${SCRIPT_CONFIG_FILE}
 }
 
 # Set the kamehouse shell environment parameters before configuring the shell
@@ -133,6 +167,8 @@ mainWrapper() {
 main() {
   initKameHouseShellEnv
   configureKameHouseShell
+  parseHelpArgument "$@"
+  parseShowScriptConfigArgument "$@"
   if ${LOG_PROCESS_TO_FILE}; then
     # default: set +o pipefail
     # set -o pipefail : if mainWrapper exits with != 0, echo $? will show the error code. With the default
