@@ -27,13 +27,74 @@ parseHelpArgument() {
   done
 }
 
+# Parse script config arguments
+parseScriptConfigArguments() {
+  parseShowScriptConfigArgument "$@"
+  parseEditScriptConfigArgument "$@"
+  parseResetScriptConfigArgument "$@"
+}
+
 # Parse show script config argument
 parseShowScriptConfigArgument() {
   local ARGS=("$@")
   for i in "${!ARGS[@]}"; do
     case "${ARGS[i]}" in
-      --show-config)
+      -sc|--show-config)
         parseShowScriptConfig
+        ;;
+    esac
+  done
+}
+
+# Parse edit script config argument
+parseEditScriptConfigArgument() {
+  local ARGS=("$@")
+  for i in "${!ARGS[@]}"; do
+    case "${ARGS[i]}" in
+      -ec|--edit-config)
+        parseEditScriptConfig
+        ;;
+    esac
+  done
+}
+
+# Parse reset script config argument
+parseResetScriptConfigArgument() {
+  local ARGS=("$@")
+  for i in "${!ARGS[@]}"; do
+    case "${ARGS[i]}" in
+      -rc|--reset-config)
+        parseResetScriptConfig
+        ;;
+    esac
+  done
+}
+
+# Parse script log arguments
+parseScriptLogArguments() {
+  parseShowScriptLogArgument "$@"
+  parseTailScriptLogArgument "$@"
+}
+
+# Parse show script log
+parseShowScriptLogArgument() {
+  local ARGS=("$@")
+  for i in "${!ARGS[@]}"; do
+    case "${ARGS[i]}" in
+      --log)
+        parseShowScriptLog
+        ;;
+    esac
+  done
+}
+
+# Parse tail script log
+parseTailScriptLogArgument() {
+  local ARGS=("$@")
+  for i in "${!ARGS[@]}"; do
+    case "${ARGS[i]}" in
+      --tail-log)
+        parseTailScriptLog
         ;;
     esac
   done
@@ -81,7 +142,11 @@ printHelp() {
   echo -e ""
   echo -e "  Options:"
   addHelpOption "-h --help" "display help"
-  addHelpOption "--show-config" "display script config file"
+  addHelpOption "-sc --show-config" "display script config file"
+  addHelpOption "-ec --edit-config" "edit script config file"
+  addHelpOption "-rc --reset-config" "reset script config file to default values"
+  addHelpOption "--log" "display script log from last run"
+  addHelpOption "--tail-log" "tail script log"
   printHelpOptions
   printHelpFooter
 }
@@ -100,6 +165,52 @@ showScriptConfig() {
   else
     log.info "Script config file ${SCRIPT_CONFIG_FILE} doesn't exist"
   fi
+}
+
+# Edit script config and exit
+parseEditScriptConfig() {
+  editScriptConfig
+  exit ${EXIT_SUCCESS}
+}
+
+# Edit script config
+editScriptConfig() {
+  if [ -f "${SCRIPT_CONFIG_FILE}" ]; then
+    log.info "Editing script config: ${SCRIPT_CONFIG_FILE}"
+    vim ${SCRIPT_CONFIG_FILE}
+  else
+    log.info "Script config file ${SCRIPT_CONFIG_FILE} doesn't exist"
+  fi
+}
+
+# Reset script config and exit
+parseResetScriptConfig() {
+  log.info "Resetting script config: ${SCRIPT_CONFIG_FILE}"
+  createScriptConfigFile
+  exit ${EXIT_SUCCESS}
+}
+
+# Create script config file
+createScriptConfigFile() {
+  mkdir -p ${SCRIPT_CONFIG_PATH}
+  cp -f ${SCRIPT_CONFIG_TEMPLATE_FILE} ${SCRIPT_CONFIG_FILE}
+  sed -i "s#---SCRIPT_NAME---#${SCRIPT_NAME}#g" "${SCRIPT_CONFIG_FILE}"
+}
+
+# Show script log and exit
+parseShowScriptLog() {
+  log.info "Start of ${PROCESS_LOG_FILE}"
+  cat ${PROCESS_LOG_FILE}
+  log.info "End of ${PROCESS_LOG_FILE}"
+  exit ${EXIT_SUCCESS}
+}
+
+# Tail script log and exit
+parseTailScriptLog() {
+  log.info "Start of ${PROCESS_LOG_FILE}"
+  tail -n 100000 -f ${PROCESS_LOG_FILE}
+  log.info "End of ${PROCESS_LOG_FILE}"
+  exit ${EXIT_SUCCESS}
 }
 
 # Override in each script with the options specific to the script
@@ -124,12 +235,24 @@ loadConfigFiles() {
 
 # Load script config file
 loadScriptConfigFile() {
-  touch ${SCRIPT_CONFIG_FILE}
+  if [ ! -f "${SCRIPT_CONFIG_FILE}" ]; then
+    log.info "Missing script config. Creating: ${SCRIPT_CONFIG_FILE}"
+    createScriptConfigFile
+  fi
   source ${SCRIPT_CONFIG_FILE}
+  log.trace "Loaded ${SCRIPT_CONFIG_FILE}"
 }
 
 # Set the kamehouse shell environment parameters before configuring the shell
 initKameHouseShellEnv() {
+  return
+}
+
+# Set default script configuration variables that can be overriden in the script config file
+# This is mainly for variables that are used in a single script. 
+# For variables shared between multiple scripts or used in *-function.sh scripts, 
+# in most cases it's better to use kamehouse.cfg instead of script config file
+setDefaultScriptConfig() {
   return
 }
 
@@ -152,9 +275,17 @@ configureKameHouseShell() {
   setIsLinuxHost
 }
 
+# Rotate log file
+rotateLogs() {
+  if [ -f "${PROCESS_LOG_FILE}" ]; then
+    mv ${PROCESS_LOG_FILE} ${PROCESS_LOG_DIR}/old/
+  fi
+}
+
 # Default main function wrapper. This should never be overriden
 mainWrapper() {
   logStart
+  setDefaultScriptConfig
   loadConfigFiles
   initScriptEnv
   parseCmdArguments "$@"
@@ -168,12 +299,14 @@ main() {
   initKameHouseShellEnv
   configureKameHouseShell
   parseHelpArgument "$@"
-  parseShowScriptConfigArgument "$@"
+  parseScriptLogArguments "$@"
+  parseScriptConfigArguments "$@"
   if ${LOG_PROCESS_TO_FILE}; then
     # default: set +o pipefail
     # set -o pipefail : if mainWrapper exits with != 0, echo $? will show the error code. With the default
     # behavior the pipe | swallows the error code and echo $? shows 0 from the tee command
     set -o pipefail
+    rotateLogs
     mainWrapper "$@" 2>&1 | tee ${PROCESS_LOG_FILE}
   else
     mainWrapper "$@"

@@ -8,9 +8,12 @@ SCRIPT_NAME_NO_EXT=${SCRIPT_NAME%.*}
 # Current script start date and time
 SCRIPT_START_DATE="$(date +%Y-%m-%d' '%H:%M:%S)"
 SCRIPT_START_TIME="$(date +%s)"
-# Script configuration file
+# Script configuration file. 
+# This config file can be used to override the default variable values defined in setDefaultScriptConfig() 
+# and also to override default values of script variables that can be modified by script command line parameters.
 SCRIPT_CONFIG_FILENAME=${SCRIPT_NAME_NO_EXT}.cfg
-SCRIPT_CONFIG_FILE=${HOME}/programs/kamehouse-shell/conf/${SCRIPT_CONFIG_FILENAME}
+SCRIPT_CONFIG_PATH=${HOME}/.kamehouse/config/shell
+SCRIPT_CONFIG_FILE="${SCRIPT_CONFIG_PATH}/${SCRIPT_CONFIG_FILENAME}"
 
 # Stores the command line arguments from the script that sources this file.
 CMD_ARGUMENTS=$@
@@ -22,12 +25,13 @@ INITIAL_DIR="`pwd`"
 # Set to false to skip logging the process output to ${PROCESS_LOG_FILE}
 # Override LOG_PROCESS_TO_FILE variable in the function initKameHouseShellEnv in the shell scripts
 LOG_PROCESS_TO_FILE=true
+PROCESS_LOG_DIR="${HOME}/logs"
 
 # Create logs dir
-mkdir -p ${HOME}/logs
+mkdir -p ${PROCESS_LOG_DIR}/old
 
 # File to log the output of the process to.
-PROCESS_LOG_FILE=${HOME}/logs/${SCRIPT_NAME_NO_EXT}.log
+PROCESS_LOG_FILE=${PROCESS_LOG_DIR}/${SCRIPT_NAME_NO_EXT}.log
 
 # Exit codes
 EXIT_SUCCESS=0
@@ -37,8 +41,8 @@ EXIT_INVALID_ARG=3
 EXIT_PROCESS_CANCELLED=4
 EXIT_INVALID_CONFIG=5
 
-# Set to true when running on linux
-export IS_LINUX_HOST=false
+# Set to false when running outside linux
+export IS_LINUX_HOST=true
 
 # Subsystem root prefix for mounted drives. Use this as a prefix to all
 # absolute paths I define in the script.
@@ -46,6 +50,9 @@ ROOT_PREFIX="/mnt"
 
 # Default kamehouse-shell installation path
 KAMEHOUSE_SHELL_PATH=${HOME}/programs/kamehouse-shell/bin
+
+# Default kamehouse-shell config template 
+SCRIPT_CONFIG_TEMPLATE_FILE="${KAMEHOUSE_SHELL_PATH}/../conf/kamehouse-shell-script-config-template.cfg"
 
 # Adds a script option to the help menu
 addHelpOption() {
@@ -98,20 +105,18 @@ checkCommandStatus() {
 }
 
 setIsLinuxHost() {
-  export IS_LINUX_HOST=false
+  export IS_LINUX_HOST=true
   local UNAME_S=`uname -s`
   local UNAME_R=`uname -r`
   if [ "${UNAME_S}" != "Linux" ]; then
     # Using Win Bash
     export IS_LINUX_HOST=false
-  else
-    if [[ ${UNAME_R} == *"Microsoft"* ]]; then
-      # Using Ubuntu for Windows 10 (deprecated. don't use that anymore, use an ubuntu vm)
-      export IS_LINUX_HOST=false
-    else
-      # Using Linux
-      export IS_LINUX_HOST=true
-    fi
+    return
+  fi
+  if [[ ${UNAME_R} == *"Microsoft"* ]]; then
+    # Using Ubuntu WSL for Windows WSL
+    export IS_LINUX_HOST=false
+    return
   fi
 }
 
