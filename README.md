@@ -14,7 +14,7 @@ git clone https://github.com/nbrest/kamehouse-shell-min.git
 ```sh
 #!/bin/bash
 
-source ${HOME}/git/kamehouse-shell-min/bin/common/functions/common-functions.sh
+source ${HOME}/git/kamehouse-shell-min/bin/functions/common-functions.sh
 if [ "$?" != "0" ]; then echo "Error importing common-functions.sh" ; exit 99 ; fi
 
 initKameHouseShellEnv() {
