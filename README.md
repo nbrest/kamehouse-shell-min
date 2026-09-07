@@ -29,9 +29,25 @@ initScriptEnv() {
   TEST_PARAM=""
 }
 
-mainProcess() {
+# common pre lin/win actions
+mainProcessPre() {
   log.info "Add your script logic here"
   log.trace "TEST_PARAM=${TEST_PARAM}"
+}
+
+# linux actions
+mainProcessLin() {
+  return
+}
+
+# windows actions
+mainProcessWin() {
+  return
+}
+
+# common post lin/win actions
+mainProcessPost() {
+  return
 }
 
 parseArguments() {
