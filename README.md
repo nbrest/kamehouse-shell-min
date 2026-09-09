@@ -29,23 +29,28 @@ initScriptEnv() {
   TEST_PARAM=""
 }
 
-# common pre lin/win actions
+# common pre lin/win/mac actions
 mainProcessPre() {
-  log.info "Add your script logic here"
+  log.info "Add your os agnostic script logic here"
   log.trace "TEST_PARAM=${TEST_PARAM}"
 }
 
-# linux actions
+# linux only actions
 mainProcessLin() {
   return
 }
 
-# windows actions
+# windows only actions
 mainProcessWin() {
   return
 }
 
-# common post lin/win actions
+# mac only actions
+mainProcessMac() {
+  return
+}
+
+# common post lin/win/mac actions
 mainProcessPost() {
   return
 }
